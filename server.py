@@ -33,6 +33,8 @@ class ServerProtocol(asyncio.Protocol):
                         else:
                             self.server.users.append(decoded.replace("login:", "").replace("\r\n", ""))
                             self.login = decoded.replace("login:", "").replace("\r\n", "")
+                            for msg in self.server.msgs:
+                                self.transport.write(msg.encode())
                 else:
                     self.server.users.append(decoded.replace("login:", "").replace("\r\n", ""))
                     self.login = decoded.replace("login:", "").replace("\r\n", "")
@@ -56,6 +58,7 @@ class ServerProtocol(asyncio.Protocol):
 
     def send_message(self, content: str):
         message = f"{self.login}: {content}\n"
+        self.server.msgs.append(message)
 
         for user in self.server.clients:
             user.transport.write(message.encode())
@@ -64,10 +67,12 @@ class ServerProtocol(asyncio.Protocol):
 class Server:
     clients: list
     users: list
+    msgs: list
 
     def __init__(self):
         self.clients = []
         self.users = []
+        self.msgs = []
 
     def build_protocol(self):
         return ServerProtocol(self)
